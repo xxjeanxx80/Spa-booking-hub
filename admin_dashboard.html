@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Dashboard – Beautiful Care</title>
+  <meta name="description" content="Admin dashboard for platform-wide operations: approvals, moderation, analytics, commissions" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>window.REQUIRED_ROLES = ['admin'];</script>
+  <script type="module" src="js/guard.js"></script>
+
+  <style>
+    :root{
+      --bg:#f5f6fb; --card:#fff; --ink:#141416; --muted:#777E90; --brand:#4f46e5; --accent:#EE316B; --success:#22c55e; --warning:#f59e0b; --danger:#ef4444;
+      --radius:16px; --shadow:0 12px 30px rgba(0,0,0,.06); --container:1280px; --grad:linear-gradient(135deg,#7c3aed,#6366f1,#60a5fa);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 'Inter',system-ui,Arial}
+    .topbar{position:sticky;top:0;z-index:50;background:#fff;box-shadow:0 1px 0 #ececf3}
+    .topwrap{max-width:var(--container);margin:0 auto;display:flex;gap:14px;align-items:center;padding:14px 20px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:#4f46e5;text-decoration:none}
+    .brand-logo{width:36px;height:36px;border-radius:10px;background:var(--grad)}
+    .layout{max-width:var(--container);margin:18px auto;display:grid;grid-template-columns:220px 1fr;gap:18px;padding:0 20px}
+    .side{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+    .side h4{margin:6px 10px 10px;color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+    .nav{display:flex;flex-direction:column}
+    .nav button{all:unset;display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;cursor:pointer;color:#374151}
+    .nav button.active,.nav button:hover{background:#f3f4ff;color:#4f46e5}
+    .content{display:grid;gap:18px}
+    .hero{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .hero .cover{height:110px;background:var(--grad)}
+    .hero .in{padding:14px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+    .card{background:#fff;border:1px solid #ececf4;border-radius:14px;padding:14px}
+    .card h3{margin:0 0 4px;font-size:13px;color:#6b7280}
+    .metric{font-size:24px;font-weight:800}
+    .panel{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:16px}
+    .panel h3{margin:0 0 10px}
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
+    th{font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.06em}
+    .btn{appearance:none;border:0;border-radius:10px;padding:9px 12px;font-weight:700;cursor:pointer}
+    .btn.primary{background:var(--brand);color:#fff}
+    .btn.ghost{background:#fff;border:1px solid #e6e6f2;color:#4f46e5}
+    .btn.danger{background:var(--danger);color:#fff}
+    .badge{border-radius:999px;padding:5px 9px;font-weight:700;font-size:12px}
+    .badge.ok{background:#ecfdf5;color:#065f46}
+    .badge.warn{background:#fff7ed;color:#92400e}
+    .badge.err{background:#fee2e2;color:#991b1b}
+    @media(max-width:1024px){.layout{grid-template-columns:1fr}.cards{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <div id="app-header"></div>
+  <script type="module">
+    import { renderHeader } from './js/ui.js';
+    renderHeader();
+  </script>
+
+  <div class="topbar"><div class="topwrap"><div class="brand"><div class="brand-logo"></div> Beautiful Care – Admin</div></div></div>
+
+  <div class="layout">
+    <aside class="side">
+      <h4>Điều hành</h4>
+      <nav class="nav" id="sideNav">
+        <button class="active" data-tab="overview">📊 Tổng quan</button>
+        <button data-tab="approvals">✅ Duyệt Spa</button>
+        <button data-tab="moderation">🛡️ Moderation</button>
+        <button data-tab="bookings">🧾 Bookings</button>
+        <button data-tab="owners">🏪 Owners</button>
+        <button data-tab="users">👥 Users</button>
+        <button data-tab="promotions">🎟️ Promotions</button>
+        <button data-tab="cms">📰 CMS</button>
+        <button data-tab="settings">⚙️ Settings</button>
+  <button class="btn ghost" id="btnLogout">Đăng xuất</button>
+      </nav>
+    </aside>
+
+    <main class="content">
+      <section class="hero">
+        <div class="cover"></div>
+        <div class="in">
+          <div style="font-size:22px;font-weight:800">Bảng điều hành toàn hệ thống</div>
+          <div class="badge ok">Online</div>
+        </div>
+      </section>
+
+      <!-- OVERVIEW -->
+      <section id="tab-overview">
+        <div class="cards">
+          <div class="card"><h3>Gross GMV (tháng)</h3><div class="metric" id="mGMV">—</div></div>
+          <div class="card"><h3>Commission Fee (tháng)</h3><div class="metric" id="mComm">—</div></div>
+          <div class="card"><h3>Bookings (tháng)</h3><div class="metric" id="mBk">—</div></div>
+          <div class="card"><h3>New Users</h3><div class="metric" id="mUsers">—</div></div>
+        </div>
+        <div class="panel">
+          <div class="toolbar"><h3>Doanh thu hệ thống & Hoa hồng theo tháng</h3></div>
+          <canvas id="chartSystem" height="90"></canvas>
+        </div>
+        <div class="panel" style="display:grid;grid-template-columns:1.2fr .8fr;gap:14px">
+          <div>
+            <h3>Top Spa theo GMV</h3>
+            <table id="tblTopSpa"><thead><tr><th>Spa</th><th>GMV</th><th>Hoa hồng</th></tr></thead><tbody></tbody></table>
+          </div>
+          <div>
+            <h3>Dịch vụ trending</h3>
+            <table id="tblTrending"><thead><tr><th>Dịch vụ</th><th>Đơn</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- APPROVALS -->
+      <section id="tab-approvals" style="display:none">
+        <div class="panel">
+          <div class="toolbar"><h3>Yêu cầu duyệt Spa</h3></div>
+          <table id="tblApprovals"><thead><tr><th>Spa</th><th>Owner</th><th>Địa chỉ</th><th>Giấy tờ</th><th>Hành động</th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+
+      <!-- MODERATION -->
+      <section id="tab-moderation" style="display:none">
+        <div class="panel">
+          <div class="toolbar"><h3>Moderation dịch vụ & review</h3></div>
+          <h4>Services nghi vấn</h4>
+          <table id="tblBadServices"><thead><tr><th>Spa</th><th>Dịch vụ</th><th>Lý do</th><th></th></tr></thead><tbody></tbody></table>
+          <h4 style="margin-top:14px">Reviews bị báo cáo</h4>
+          <table id="tblBadReviews"><thead><tr><th>Spa</th><th>Khách</th><th>Rating</th><th>Nội dung</th><th>Lý do</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+
+      <!-- BOOKINGS GLOBAL -->
+      <section id="tab-bookings" style="display:none">
+        <div class="panel">
+          <div class="toolbar"><h3>Đặt lịch toàn hệ thống</h3><input class="input" id="searchBk" placeholder="Tìm theo khách/Spa..."></div>
+          <table id="tblAllBookings"><thead><tr><th>Khách</th><th>Spa</th><th>Dịch vụ</th><th>Giá</th><th>Hoa hồng</th><th>Net cho Owner</th><th>Trạng thái</th><th>Hành động</th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+
+      <!-- OWNERS -->
+      <section id="tab-owners" style="display:none">
+        <div class="panel">
+          <div class="toolbar"><h3>Chủ Spa</h3></div>
+          <table id="tblOwners"><thead><tr><th>Owner</th><th>Spa</th><th>GMV tháng</th><th>Hoa hồng</th><th>Trạng thái</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+
+      <!-- USERS -->
+      <section id="tab-users" style="display:none">
+        <div class="panel">
+          <div class="toolbar"><h3>Tài khoản người dùng</h3></div>
+          <table id="tblUsers"><thead><tr><th>Tên</th><th>Email</th><th>Role</th><th>Trạng thái</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+
+      <!-- PROMOTIONS -->
+      <section id="tab-promotions" style="display:none">
+        <div class="panel">
+          <div class="toolbar"><h3>Chiến dịch & Coupon toàn hệ thống</h3><button class="btn primary" id="btnNewCampaign">+ Tạo chiến dịch</button></div>
+          <table id="tblCampaigns"><thead><tr><th>Tên</th><th>Loại</th><th>Giá trị</th><th>Thời gian</th><th>Phạm vi</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+
+      <!-- CMS -->
+      <section id="tab-cms" style="display:none">
+        <div class="panel">
+          <div class="toolbar"><h3>Quản trị nội dung (Blog/Banner)</h3><button class="btn primary" id="btnNewPost">+ Bài viết</button></div>
+          <table id="tblPosts"><thead><tr><th>Tiêu đề</th><th>Tác giả</th><th>Ngày</th><th>Trạng thái</th><th></th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="tab-settings" style="display:none">
+        <div class="panel">
+          <h3>Cấu hình hệ thống</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:680px">
+            <label>Tỉ lệ hoa hồng mặc định (%)<input class="input" id="inpDefaultComm" value="10"></label>
+            <label>Ngưỡng cảnh báo review xấu (%)<input class="input" id="inpBadReview" value="20"></label>
+            <label>Ngưỡng cảnh báo hoàn hủy (%)<input class="input" id="inpCancelRate" value="15"></label>
+          </div>
+          <div style="margin-top:10px" class="actions"><button class="btn primary" id="btnSaveSettings">Lưu</button></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+  // ===== MOCK DATA (thay bằng API thật sau) =====
+  const sys = {
+    default_commission: 0.10,
+    months:["01","02","03","04","05","06","07","08","09","10","11","12"],
+    gmv:[80,92,100,112,130,140,155,178,198,0,0,0], // đơn vị triệu
+    commission:[8,9.2,10,11.2,13,14,15.5,17.8,19.8,0,0,0],
+    new_users:[300,350,380,420,460,500,520,560,590,0,0,0]
+  };
+
+  const spas = [
+    {id:1,name:'Aki Beauty Spa', owner:'Trần A', address:'Ba Đình, Hà Nội', approved:true, gmv:88, comm:8.8},
+    {id:2,name:'Nàng Charming', owner:'Nguyễn B', address:'Đống Đa, Hà Nội', approved:true, gmv:30, comm:3.0},
+    {id:3,name:'Sakura Spa', owner:'Phạm C', address:'Cầu Giấy, Hà Nội', approved:false, gmv:0, comm:0}
+  ];
+
+  const approvals = [
+    {id:3,name:'Sakura Spa', owner:'Phạm C', address:'Cầu Giấy, Hà Nội', docs:'Giấy phép KD.pdf'},
+    {id:4,name:'Zen Spa', owner:'Lê D', address:'Hoàn Kiếm, Hà Nội', docs:'Giấy phép KD.pdf'}
+  ];
+
+  const trending = [
+    {svc:'Massage Shiatsu', orders:120},
+    {svc:'Massage đá nóng', orders:96},
+    {svc:'Gội đầu dưỡng sinh', orders:85}
+  ];
+
+  const bookings = [
+    {id:5001,customer:'Nguyễn An',spa:'Aki Beauty Spa',service:'Shiatsu',price:750000,commission:75000,net:675000,status:'completed'},
+    {id:5002,customer:'Trần Vũ',spa:'Aki Beauty Spa',service:'VN cổ truyền',price:600000,commission:60000,net:540000,status:'confirmed'},
+    {id:6001,customer:'Minh',spa:'Nàng Charming',service:'Dưỡng sinh',price:250000,commission:25000,net:225000,status:'pending'}
+  ];
+
+  const owners = [
+    {name:'Trần A', spa_count:1, gmv:88, comm:8.8, status:'active'},
+    {name:'Nguyễn B', spa_count:1, gmv:30, comm:3.0, status:'active'}
+  ];
+
+  const users = [
+    {name:'Duc Tran', email:'duc@example.com', role:'customer', status:'active'},
+    {name:'Owner A', email:'ownera@example.com', role:'owner', status:'active'},
+    {name:'Staff X', email:'staffx@example.com', role:'staff', status:'active'},
+    {name:'Tài khoản nghi vấn', email:'bad@example.com', role:'customer', status:'locked'}
+  ];
+
+  const badServices = [
+    {spa:'Aki Beauty Spa', svc:'Giảm cân cấp tốc', reason:'Quảng cáo sai sự thật'}
+  ];
+
+  const badReviews = [
+    {spa:'Aki Beauty Spa', name:'User 123', rating:1, text:'Dở tệ!!!', reason:'Ngôn từ xúc phạm'}
+  ];
+
+  const campaigns = [
+    {name:'8/3 Toàn hệ thống', type:'percent', value:20, time:'01-08/03', scope:'All spas'}
+  ];
+
+  const posts = [
+    {title:'Tips chọn spa an toàn', author:'Admin', date:'2025-09-10', status:'published'}
+  ];
+
+  // ===== RENDER FUNCTIONS =====
+  function nf(v){return new Intl.NumberFormat('vi-VN').format(v)}
+  function money(v){return nf(v) + ' VND'}
+
+  function renderOverview(){
+    document.getElementById('mGMV').textContent = nf(sys.gmv[8]*1_000_000) + ' VND';
+    document.getElementById('mComm').textContent = nf(sys.commission[8]*1_000_000) + ' VND';
+    document.getElementById('mBk').textContent = bookings.length;
+    document.getElementById('mUsers').textContent = sys.new_users[8];
+
+    const ctx = document.getElementById('chartSystem');
+    if(window._sysChart) window._sysChart.destroy();
+    window._sysChart = new Chart(ctx,{type:'bar',data:{labels:sys.months,datasets:[{label:'GMV (triệu)',data:sys.gmv},{label:'Commission (triệu)',data:sys.commission}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+
+    const topSpaBody=document.querySelector('#tblTopSpa tbody');
+    topSpaBody.innerHTML = spas.filter(s=>s.approved).sort((a,b)=>b.gmv-a.gmv).map(s=>`<tr><td>${s.name}</td><td>${s.gmv} triệu</td><td>${s.comm} triệu</td></tr>`).join('');
+
+    const trendBody=document.querySelector('#tblTrending tbody');
+    trendBody.innerHTML = trending.map(t=>`<tr><td>${t.svc}</td><td>${t.orders}</td></tr>`).join('');
+  }
+
+  function renderApprovals(){
+    const body=document.querySelector('#tblApprovals tbody');
+    body.innerHTML = approvals.map(a=>`<tr><td>${a.name}</td><td>${a.owner}</td><td>${a.address}</td><td><a href="#">${a.docs}</a></td><td><button class='btn primary' onclick='approve(${a.id})'>Duyệt</button> <button class='btn danger' onclick='reject(${a.id})'>Từ chối</button></td></tr>`).join('');
+  }
+
+  function renderModeration(){
+    document.querySelector('#tblBadServices tbody').innerHTML = badServices.map(x=>`<tr><td>${x.spa}</td><td>${x.svc}</td><td>${x.reason}</td><td><button class='btn danger' onclick='removeService("${x.spa}","${x.svc}")'>Gỡ</button></td></tr>`).join('');
+    document.querySelector('#tblBadReviews tbody').innerHTML = badReviews.map(x=>`<tr><td>${x.spa}</td><td>${x.name}</td><td>${x.rating}</td><td>${x.text}</td><td>${x.reason}</td><td><button class='btn danger' onclick='removeReview("${x.name}")'>Gỡ</button></td></tr>`).join('');
+  }
+
+  function renderAllBookings(){
+    const q=(document.getElementById('searchBk').value||'').toLowerCase();
+    document.querySelector('#tblAllBookings tbody').innerHTML = bookings.filter(b=> (b.customer+b.spa).toLowerCase().includes(q)).map(b=>`<tr><td>${b.customer}</td><td>${b.spa}</td><td>${b.service}</td><td>${money(b.price)}</td><td>${money(b.commission)}</td><td>${money(b.net)}</td><td>${b.status}</td><td><button class='btn ghost' onclick='refund(${b.id})'>Hoàn tiền</button></td></tr>`).join('');
+  }
+
+  function renderOwners(){
+    document.querySelector('#tblOwners tbody').innerHTML = owners.map(o=>`<tr><td>${o.name}</td><td>${o.spa_count}</td><td>${o.gmv} triệu</td><td>${o.comm} triệu</td><td>${o.status}</td><td><button class='btn ghost' onclick='warnOwner("${o.name}")'>Cảnh báo</button></td></tr>`).join('');
+  }
+
+  function renderUsers(){
+    document.querySelector('#tblUsers tbody').innerHTML = users.map(u=>`<tr><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td><td>${u.status}</td><td><button class='btn ${u.status==='locked'?'primary':'danger'}' onclick='toggleUser("${u.email}")'>${u.status==='locked'?'Mở khoá':'Khoá'}</button></td></tr>`).join('');
+  }
+
+  function renderPromotions(){
+    document.querySelector('#tblCampaigns tbody').innerHTML = campaigns.map(c=>`<tr><td>${c.name}</td><td>${c.type}</td><td>${c.value}</td><td>${c.time}</td><td>${c.scope}</td><td><button class='btn ghost' onclick='editCampaign("${c.name}")'>Sửa</button></td></tr>`).join('');
+  }
+
+  function renderCMS(){
+    document.querySelector('#tblPosts tbody').innerHTML = posts.map(p=>`<tr><td>${p.title}</td><td>${p.author}</td><td>${p.date}</td><td>${p.status}</td><td><button class='btn ghost' onclick='editPost("${p.title}")'>Sửa</button></td></tr>`).join('');
+  }
+
+  // ===== Actions (demo) =====
+  window.approve = id=>{const i=approvals.findIndex(a=>a.id===id); if(i>-1){const a=approvals.splice(i,1)[0]; const s={id:a.id,name:a.name,owner:a.owner,address:a.address,approved:true,gmv:0,comm:0}; spas.push(s); renderApprovals(); renderOverview(); alert('Đã duyệt spa: '+a.name);}};
+  window.reject = id=>{const i=approvals.findIndex(a=>a.id===id); if(i>-1){alert('Đã từ chối '+approvals[i].name); approvals.splice(i,1); renderApprovals();}};
+  window.removeService=(spa,svc)=>alert('Gỡ dịch vụ '+svc+' của '+spa);
+  window.removeReview=(name)=>alert('Gỡ review của '+name);
+  window.refund=id=>alert('Xử lý hoàn tiền booking #'+id);
+  window.warnOwner=name=>alert('Gửi cảnh báo tới owner '+name);
+  window.toggleUser=email=>{const u=users.find(x=>x.email===email); if(!u) return; u.status = u.status==='locked'?'active':'locked'; renderUsers();};
+  window.editCampaign=name=>alert('Sửa chiến dịch '+name);
+  window.editPost=title=>alert('Sửa bài viết '+title);
+
+  document.getElementById('searchBk').oninput=renderAllBookings;
+  document.getElementById('btnNewCampaign').onclick=()=>{const name=prompt('Tên chiến dịch?'); if(!name) return; campaigns.push({name,type:'percent',value:10,time:'Tuần này',scope:'All spas'}); renderPromotions();};
+  document.getElementById('btnNewPost').onclick=()=>{const t=prompt('Tiêu đề?'); if(!t) return; posts.push({title:t,author:'Admin',date:new Date().toISOString().slice(0,10),status:'draft'}); renderCMS();};
+  document.getElementById('btnSaveSettings').onclick=()=>alert('Đã lưu cấu hình');
+
+  // LOGOUT BUTTON
+  var btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) {
+    btnLogout.onclick = function() {
+      localStorage.removeItem('auth');
+      window.location.href = "index.html";
+    };
+  }
+
+  // NAV
+  document.getElementById('sideNav').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return; document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    document.querySelectorAll('[id^=tab-]').forEach(x=>x.style.display='none'); document.getElementById('tab-'+b.dataset.tab).style.display='block';
+  });
+
+  // INIT
+  renderOverview(); renderApprovals(); renderModeration(); renderAllBookings(); renderOwners(); renderUsers(); renderPromotions(); renderCMS();
+  populateDashboard(); renderServices(); renderStaff(); renderBookings(); renderReviews(); renderCustomers(); renderCoupons(); renderCalendar(); syncSettings();
+  window.addEventListener('DOMContentLoaded', function() {
+  const btnLogout = document.getElementById('btnLogout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function(e) {
+      e.preventDefault();
+      localStorage.removeItem('auth');
+      window.location.href = "index.html";
+    });
+  }
+});
+  </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập - BeautyHub</title>
+  <style>
+    body{font-family:'Inter',sans-serif;background:#f8fafc;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .login-box{background:#fff;padding:2rem;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.1);width:100%;max-width:380px}
+    h2{text-align:center;margin-bottom:1.2rem}
+    .form-group{margin-bottom:1rem}
+    label{display:block;margin-bottom:.3rem;font-weight:500}
+    input,select{width:100%;padding:.8rem;border:1px solid #e2e8f0;border-radius:8px;font-size:1rem}
+    .btn{width:100%;padding:.9rem;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;background:#6366f1;color:#fff;margin-top:1rem}
+    .btn:hover{background:#4f46e5}
+    .alert{display:none;margin-bottom:10px;padding:8px 10px;background:#fee2e2;color:#991b1b;border-radius:8px}
+    .hint{opacity:.7;margin-top:8px;font-size:.9rem}
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>Đăng nhập</h2>
+    <div id="msg" class="alert"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input id="email" type="email" required placeholder="vd: owner@demo.test">
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu</label>
+        <input id="password" type="password" required placeholder="••••••">
+      </div>
+      <div class="form-group">
+        <label>Bạn là (tuỳ chọn)</label>
+        <select id="role">
+          <option value="">— Không chọn —</option>
+          <option value="customer">Khách hàng</option>
+          <option value="owner">Chủ spa</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button type="submit" class="btn">Đăng nhập</button>
+      <div class="hint">Demo: owner@demo.test / owner • admin@demo.test / admin • alice@demo.test / 123456</div>
+    </form>
+  </div>
+
+  <script type="module">
+    import { login, redirectByRole } from './js/auth.js';
+    const form = document.getElementById('loginForm');
+    const msg  = document.getElementById('msg');
+
+    function showErr(t){ msg.textContent=t; msg.style.display='block'; }
+
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      msg.style.display='none';
+      const email = document.getElementById('email').value.trim();
+      const pass  = document.getElementById('password').value;
+      const role  = document.getElementById('role').value.trim();
+      try{
+        const sess = login(email, pass, role);
+        redirectByRole(sess.role);
+      }catch(err){
+        showErr(err.message || 'Đăng nhập thất bại');
+      }
+    });
+  </script>
+</body>
+</html>
