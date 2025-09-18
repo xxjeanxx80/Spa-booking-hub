@@ -1,0 +1,10 @@
+{
+  "name": "spa-booking-hub",
+  "private": true,
+  "scripts": {
+    "dev": "http-server . -c-1 -p 3000"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
