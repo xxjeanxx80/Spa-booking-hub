@@ -58,8 +58,45 @@ select {
   color: #991b1b;
   border-radius: 8px;
 }
+.alert.info {
+  background: #e0f2fe;
+  color: #1d4ed8;
+}
 .hint {
   opacity: 0.7;
   margin-top: 8px;
   font-size: 0.9rem;
+}
+
+.hint.secondary {
+  opacity: 0.85;
+  color: #475569;
+}
+
+#roleHelper {
+  margin-top: 0.4rem;
+}
+.form-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -0.2rem;
+}
+.form-inline .toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+.form-inline .toggle input {
+  width: auto;
+}
+.link {
+  font-size: 0.9rem;
+  color: #6366f1;
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
 }

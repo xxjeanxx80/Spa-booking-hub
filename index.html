@@ -13,34 +13,207 @@
     <script type="module">
         import { getAuth, logout } from './js/auth.js';
 
-        // 1) Liên kết nút đến login.html với role=customer (preselect)
-        const actions = document.querySelector('.header-actions');
-        const [btnLogin, btnSignup] = actions.querySelectorAll('.btn');
+        const SIGNUP_STORAGE_KEY = 'fbeauty-signups';
 
-        // Nút "Đăng nhập" → login.html?role=customer
-        btnLogin.setAttribute('href', 'login.html?role=customer');
+        window.addEventListener('DOMContentLoaded', function () {
+            const actions = document.querySelector('.header-actions');
+            if (!actions) {
+                return;
+            }
 
-        // Nút "Đăng ký" → tạm thời cũng đưa về login (có thể đổi sang register sau)
-        btnSignup.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = 'login.html?role=customer&mode=signup';
-        });
+            const signupDialog = document.getElementById('signupDialog');
+            const signupForm = document.getElementById('signupForm');
+            const signupSuccess = document.getElementById('signupSuccess');
+            const loginButton = actions.querySelector('.btn-outline');
+            const signupButton = actions.querySelector('.btn-primary');
+            const dialogSupported = !!(signupDialog && typeof signupDialog.showModal === 'function');
 
-        // 2) Nếu đã đăng nhập → hiển thị "Xin chào" + "Đăng xuất"
-        const u = getAuth();
-        if (u) {
-            actions.innerHTML = `
-            <span>Xin chào, <b>${u.name}</b></span>
-            <a href="#" class="btn btn-secondary" id="btnLogout">Đăng xuất</a>
-            <div class="language-selector">
-                <img src="https://flagcdn.com/w20/vn.png" alt="VN" width="20">
-            </div>
-            `;
-            document.getElementById('btnLogout').addEventListener('click', (e)=>{
-            e.preventDefault();
-            logout(); // xóa session và về login.html
+            if (loginButton && !loginButton.getAttribute('href')) {
+                loginButton.setAttribute('href', 'login.html?role=customer');
+            }
+
+            if (signupButton) {
+                if (!signupButton.getAttribute('href')) {
+                    signupButton.setAttribute('href', 'login.html?role=customer&mode=signup');
+                }
+                signupButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    openSignupModal();
+                });
+            }
+
+            if (signupDialog && !dialogSupported) {
+                signupDialog.setAttribute('data-no-dialog', 'true');
+            }
+
+            function resetSignupForm() {
+                if (signupForm) {
+                    signupForm.reset();
+                }
+                if (signupSuccess) {
+                    signupSuccess.hidden = true;
+                    signupSuccess.textContent = '';
+                }
+            }
+
+            function focusFirstSignupField() {
+                if (!signupForm) {
+                    return;
+                }
+                const firstInput = signupForm.querySelector('input[name="name"]');
+                if (firstInput) {
+                    window.setTimeout(function () {
+                        firstInput.focus();
+                    }, 50);
+                }
+            }
+
+            function openSignupModal() {
+                if (signupDialog) {
+                    resetSignupForm();
+                    if (dialogSupported) {
+                        signupDialog.showModal();
+                        focusFirstSignupField();
+                        return;
+                    }
+                    signupDialog.classList.add('is-open');
+                    document.body.classList.add('signup-dialog-open');
+                    focusFirstSignupField();
+                    return;
+                }
+                window.location.href = 'login.html?role=customer&mode=signup';
+            }
+
+            function closeSignupModal() {
+                if (!signupDialog) {
+                    return;
+                }
+                if (dialogSupported) {
+                    if (signupDialog.open) {
+                        signupDialog.close();
+                    }
+                } else {
+                    signupDialog.classList.remove('is-open');
+                    document.body.classList.remove('signup-dialog-open');
+                }
+                resetSignupForm();
+            }
+
+            if (signupDialog) {
+                if (dialogSupported) {
+                    signupDialog.addEventListener('close', function () {
+                        resetSignupForm();
+                    });
+                } else {
+                    signupDialog.addEventListener('click', function (event) {
+                        if (event.target === signupDialog) {
+                            closeSignupModal();
+                        }
+                    });
+                    document.addEventListener('keydown', function (event) {
+                        if (event.key === 'Escape' && signupDialog.classList.contains('is-open')) {
+                            closeSignupModal();
+                        }
+                    });
+                }
+            }
+
+            const closeSignupButtons = document.querySelectorAll('[data-close-signup]');
+            Array.prototype.forEach.call(closeSignupButtons, function (btn) {
+                btn.addEventListener('click', function () {
+                    closeSignupModal();
+                });
             });
-        }
+
+            function renderAuthenticatedActions(user) {
+                const target = user.role === 'owner'
+                    ? 'owner_dashboard.html'
+                    : user.role === 'admin'
+                        ? 'admin_dashboard.html'
+                        : '#spas';
+                const label = user.role === 'customer' ? 'Xem spa nổi bật' : 'Vào trang quản lý';
+
+                actions.innerHTML = '
+                    <span>Xin chào, <b>' + user.name + '</b></span>
+                    <a href="' + target + '" class="btn btn-primary">' + label + '</a>
+                    <a href="#" class="btn btn-secondary" id="btnLogout">Đăng xuất</a>
+                    <div class="language-selector">
+                        <img src="https://flagcdn.com/w20/vn.png" alt="VN" width="20">
+                    </div>
+                ';
+
+                const logoutBtn = document.getElementById('btnLogout');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        logout();
+                    });
+                }
+            }
+
+            function saveSignup(data) {
+                try {
+                    const existing = JSON.parse(localStorage.getItem(SIGNUP_STORAGE_KEY) || '[]');
+                    existing.push({
+                        name: data.name,
+                        email: data.email,
+                        phone: data.phone,
+                        intent: data.intent,
+                        createdAt: new Date().toISOString()
+                    });
+                    localStorage.setItem(SIGNUP_STORAGE_KEY, JSON.stringify(existing));
+                } catch (error) {
+                    console.error('Không thể lưu đăng ký', error);
+                }
+            }
+
+            if (signupForm) {
+                signupForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+
+                    const formData = new FormData(signupForm);
+                    const payload = {
+                        name: String(formData.get('name') || '').trim(),
+                        email: String(formData.get('email') || '').trim(),
+                        phone: String(formData.get('phone') || '').trim(),
+                        intent: String(formData.get('intent') || 'customer').trim() || 'customer'
+                    };
+
+                    if (!payload.name || !payload.email || !payload.phone) {
+                        if (signupSuccess) {
+                            signupSuccess.hidden = false;
+                            signupSuccess.textContent = 'Vui lòng điền đầy đủ thông tin để chúng tôi liên hệ.';
+                        }
+                        return;
+                    }
+
+                    saveSignup(payload);
+
+                    if (signupSuccess) {
+                        signupSuccess.hidden = false;
+                        signupSuccess.textContent = 'Đã ghi nhận đăng ký cho ' + payload.name + '. Chúng tôi sẽ liên hệ sớm!';
+                    }
+
+                    window.setTimeout(function () {
+                        closeSignupModal();
+                        const targetRole = payload.intent || 'customer';
+                        const baseLocation = (window.location.origin && window.location.origin !== 'null')
+                            ? window.location.origin
+                            : window.location.href;
+                        const url = new URL('login.html', baseLocation);
+                        url.searchParams.set('role', targetRole);
+                        url.searchParams.set('mode', 'signup');
+                        url.searchParams.set('email', payload.email);
+                        window.location.href = url.toString();
+                    }, 1200);
+                });
+            }
+
+            const currentUser = getAuth();
+            if (currentUser) {
+                renderAuthenticatedActions(currentUser);
+            }
+        });
     </script>
 
     <!-- Header -->
@@ -59,8 +232,8 @@
                     </ul>
                 </nav>
                 <div class="header-actions">
-                    <a href="#" class="btn btn-outline">Đăng nhập</a>
-                    <a href="#" class="btn btn-primary">Đăng ký</a>
+                    <a href="login.html?role=customer" class="btn btn-outline" data-default-login>Đăng nhập</a>
+                    <a href="login.html?role=customer&mode=signup" class="btn btn-primary" data-default-signup>Đăng ký</a>
                     <div class="language-selector">
                         <img src="https://flagcdn.com/w20/vn.png" alt="VN" width="20">
                     </div>
@@ -789,5 +962,32 @@
             }
         });
     </script>
+
+    <dialog id="signupDialog" class="signup-dialog">
+        <form id="signupForm">
+            <h3>Đăng ký tài khoản BeautyHub</h3>
+            <p class="signup-helper">Điền thông tin bên dưới, chúng tôi sẽ liên hệ trong vòng 1 ngày làm việc.</p>
+            <label>Họ và tên
+                <input type="text" name="name" placeholder="Nguyễn Văn A" required>
+            </label>
+            <label>Email
+                <input type="email" name="email" placeholder="ban@example.com" required>
+            </label>
+            <label>Số điện thoại
+                <input type="tel" name="phone" placeholder="0123 456 789" required>
+            </label>
+            <label>Bạn quan tâm đến
+                <select name="intent">
+                    <option value="customer">Đặt lịch làm đẹp</option>
+                    <option value="owner">Đưa spa của tôi lên nền tảng</option>
+                </select>
+            </label>
+            <div class="signup-actions">
+                <button type="button" class="btn btn-outline" data-close-signup>Đóng</button>
+                <button type="submit" class="btn btn-primary">Gửi yêu cầu</button>
+            </div>
+            <p class="signup-success" id="signupSuccess" hidden></p>
+        </form>
+    </dialog>
 </body>
 </html>

@@ -650,6 +650,101 @@ body {
   }
 }
 
+/* ===== Signup dialog ===== */
+.signup-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.signup-dialog {
+  border: none;
+  border-radius: 20px;
+  padding: 28px;
+  width: min(420px, 92vw);
+  font-family: "Inter", sans-serif;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+}
+
+body.signup-dialog-open {
+  overflow: hidden;
+}
+
+body.signup-dialog-open::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1099;
+}
+
+.signup-dialog[data-no-dialog] {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  z-index: 1100;
+}
+
+.signup-dialog[data-no-dialog].is-open {
+  display: block;
+}
+
+.signup-dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.signup-dialog h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.signup-helper {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.signup-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.signup-dialog input,
+.signup-dialog select {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.signup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.signup-success {
+  margin: 0;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
 .hidden {
   display: none !important;
 }

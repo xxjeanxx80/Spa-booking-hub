@@ -33,6 +33,27 @@
     </div>
   </div>
 
+  <dialog id="spaDialog" class="spa-dialog">
+    <form id="spaForm">
+      <h3>Thêm spa mới</h3>
+      <p class="helper">Nhập thông tin cơ bản của spa. Bạn có thể cập nhật chi tiết hơn trong tab "Cài đặt Spa" sau khi lưu.</p>
+      <label>Tên spa
+        <input id="newSpaName" type="text" placeholder="Ví dụ: Sunny Beauty" required />
+      </label>
+      <label>Địa chỉ
+        <textarea id="newSpaAddr" rows="3" placeholder="Số nhà, đường, quận/huyện" required></textarea>
+      </label>
+      <label>Số điện thoại
+        <input id="newSpaPhone" type="tel" placeholder="098x xxx xxx" required />
+      </label>
+      <div class="actions">
+        <button type="button" class="btn ghost" data-close-spa>Hủy</button>
+        <button type="submit" class="btn primary">Lưu spa</button>
+      </div>
+      <p class="success" id="spaSuccess" hidden></p>
+    </form>
+  </dialog>
+
   <div class="layout">
     <!-- Sidebar -->
     <aside class="side">
@@ -212,26 +233,187 @@
     revenue:{1:{months:["01","02","03","04","05","06","07","08","09","10","11","12"], rev:[40,46,50,55,60,64,70,80,88,0,0,0], prof:[18,20,22,24,26,28,30,36,40,0,0,0]}, 2:{months:["01","02","03","04","05","06","07","08","09","10","11","12"], rev:[12,14,16,18,20,22,26,28,30,0,0,0], prof:[5,6,7,8,9,10,12,13,14,0,0,0]}}
   };
 
-  let currentSpaId = db.spas[0].id;
+  let currentSpaId = db.spas.length ? db.spas[0].id : null;
+  const revenueValues = Object.values(db.revenue || {});
+  const MONTH_TEMPLATE = (revenueValues.length && revenueValues[0] && Array.isArray(revenueValues[0].months)
+    ? revenueValues[0].months
+    : ['01','02','03','04','05','06','07','08','09','10','11','12']
+  ).slice();
 
-  // ======= INIT =======
   const spaSelect = document.getElementById('spaSelect');
+  const btnToggleStatus = document.getElementById('btnToggleStatus');
+  const btnAddSpa = document.getElementById('btnAddSpa');
+  const btnLogout = document.getElementById('btnLogout');
+  const spaDialog = document.getElementById('spaDialog');
+  const spaForm = document.getElementById('spaForm');
+  const spaSuccess = document.getElementById('spaSuccess');
+  const spaDialogSupported = !!(spaDialog && typeof spaDialog.showModal === 'function');
+  const spaNameEl = document.getElementById('spaName');
+  const spaAddrEl = document.getElementById('spaAddr');
+  const spaStatusEl = document.getElementById('spaStatus');
+  const spaCountEl = document.getElementById('spaCount');
+  const searchBookingInput = document.getElementById('searchBooking');
+
+  if (spaDialog && !spaDialogSupported) {
+    spaDialog.setAttribute('data-no-dialog', 'true');
+  }
+
+  if(btnLogout){
+    btnLogout.addEventListener('click', (event)=>{
+      event.preventDefault();
+      if(typeof window.__LOGOUT__ === 'function'){
+        window.__LOGOUT__();
+      }else{
+        localStorage.removeItem('auth');
+        window.location.href = 'login.html';
+      }
+    });
+  }
+
+  function resetSpaDialogState(){
+    if(spaForm){
+      spaForm.reset();
+    }
+    if(spaSuccess){
+      spaSuccess.hidden = true;
+      spaSuccess.textContent = '';
+    }
+  }
+
+  function focusSpaDialog(){
+    if(!spaForm){
+      return;
+    }
+    const nameField = spaForm.querySelector('#newSpaName');
+    if(nameField){
+      window.setTimeout(function(){ nameField.focus(); }, 50);
+    }
+  }
+
+  function openSpaDialogUi(){
+    if(!spaDialog){
+      promptFallbackSpa();
+      return;
+    }
+    resetSpaDialogState();
+    if(spaDialogSupported){
+      spaDialog.showModal();
+    }else{
+      spaDialog.classList.add('is-open');
+      document.body.classList.add('spa-dialog-open');
+    }
+    focusSpaDialog();
+  }
+
+  function closeSpaDialogUi(){
+    if(!spaDialog){
+      return;
+    }
+    if(spaDialogSupported){
+      if(spaDialog.open){
+        spaDialog.close();
+      }
+    }else{
+      spaDialog.classList.remove('is-open');
+      document.body.classList.remove('spa-dialog-open');
+    }
+    resetSpaDialogState();
+  }
+
+  function ensureSpaCollections(spaId){
+    if(!spaId) return;
+    db.services[spaId] ||= [];
+    db.staff[spaId] ||= [];
+    db.bookings[spaId] ||= [];
+    db.reviews[spaId] ||= [];
+    db.customers[spaId] ||= [];
+    db.coupons[spaId] ||= [];
+    db.revenue[spaId] ||= { months: MONTH_TEMPLATE.slice(), rev: new Array(12).fill(0), prof: new Array(12).fill(0) };
+  }
+
+  function addSpaToDb({ name, address, phone }){
+    const newId = Date.now();
+    const spa = { id: newId, name, status: 'active', address, phone: phone || '' };
+    db.spas.push(spa);
+    ensureSpaCollections(newId);
+    currentSpaId = newId;
+    refreshSpaOptions();
+    refreshAll();
+  }
+
   function refreshSpaOptions(){
+    if(!db.spas.length){
+      spaSelect.innerHTML = '<option value="">— Chưa có spa —</option>';
+      spaSelect.disabled = true;
+      spaCountEl.textContent = '0';
+      currentSpaId = null;
+      updateToggleButtonLabel();
+      return;
+    }
+
+    spaSelect.disabled = false;
+
+    if(!currentSpaId || !db.spas.find(s=>s.id==currentSpaId)){
+      currentSpaId = db.spas[0].id;
+    }
+
     spaSelect.innerHTML = db.spas.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
-    document.getElementById('spaCount').textContent = db.spas.length;
     spaSelect.value = currentSpaId;
+    spaCountEl.textContent = db.spas.length;
+    updateToggleButtonLabel();
   }
 
   function fmtMoney(v){return new Intl.NumberFormat('vi-VN').format(v)+" VND"}
 
-  function populateDashboard(){
+  function updateToggleButtonLabel(){
+    if(!btnToggleStatus){
+      return;
+    }
+    if(!currentSpaId){
+      btnToggleStatus.textContent = 'Tạm nghỉ';
+      btnToggleStatus.disabled = true;
+      return;
+    }
     const spa = db.spas.find(s=>s.id==currentSpaId);
-    document.getElementById('spaName').textContent = spa.name;
-    document.getElementById('spaAddr').textContent = spa.address;
-    const badge = document.getElementById('spaStatus');
-    if (spa.status==='active'){badge.textContent='Đang hoạt động';badge.className='badge live'} else {badge.textContent='Tạm nghỉ';badge.className='badge pause'}
+    if(!spa){
+      btnToggleStatus.textContent = 'Tạm nghỉ';
+      btnToggleStatus.disabled = true;
+      return;
+    }
+    btnToggleStatus.disabled = false;
+    btnToggleStatus.textContent = spa.status==='active' ? 'Tạm nghỉ' : 'Mở lại spa';
+  }
 
-    const stat = db.revenue[currentSpaId];
+  function populateDashboard(){
+    const spa = currentSpaId ? db.spas.find(s=>s.id==currentSpaId) : null;
+    if(!spa){
+      spaNameEl.textContent = 'Bạn chưa có spa nào';
+      spaAddrEl.textContent = 'Nhấn "Thêm spa" để tạo spa đầu tiên và bắt đầu quản lý.';
+      spaStatusEl.textContent = 'Chưa có dữ liệu';
+      spaStatusEl.className = 'badge pause';
+      document.getElementById('mRevenue').textContent = fmtMoney(0);
+      document.getElementById('mProfit').textContent = fmtMoney(0);
+      document.getElementById('mBookings').textContent = 0;
+      document.getElementById('mReturning').textContent = 0;
+      const topBody = document.querySelector('#tblTopServices tbody');
+      if(topBody){ topBody.innerHTML = '<tr><td colspan="3" class="muted">Chưa có dữ liệu</td></tr>'; }
+      const perfBody = document.querySelector('#tblStaffPerf tbody');
+      if(perfBody){ perfBody.innerHTML = '<tr><td colspan="3" class="muted">Chưa có dữ liệu</td></tr>'; }
+      const ctxEmpty = document.getElementById('chartRevenue');
+      if(window._chart){ window._chart.destroy(); window._chart = null; }
+      if(ctxEmpty){
+        window._chart = new Chart(ctxEmpty,{type:'bar', data:{labels:MONTH_TEMPLATE, datasets:[{label:'Doanh thu (triệu)', data:new Array(12).fill(0), borderWidth:1},{label:'Lợi nhuận (triệu)', data:new Array(12).fill(0), borderWidth:1}]}, options:{responsive:true, scales:{y:{beginAtZero:true}}}});
+      }
+      return;
+    }
+
+    ensureSpaCollections(spa.id);
+
+    spaNameEl.textContent = spa.name;
+    spaAddrEl.textContent = spa.address;
+    if (spa.status==='active'){spaStatusEl.textContent='Đang hoạt động';spaStatusEl.className='badge live';} else {spaStatusEl.textContent='Tạm nghỉ';spaStatusEl.className='badge pause';}
+
+    const stat = db.revenue[currentSpaId] || { months: MONTH_TEMPLATE, rev: new Array(12).fill(0), prof: new Array(12).fill(0) };
     const revThis = stat.rev[8]||0; // tháng 9
     const profThis = stat.prof[8]||0;
     document.getElementById('mRevenue').textContent = fmtMoney(revThis*1000000);
@@ -241,7 +423,6 @@
     const returning = (db.customers[currentSpaId]||[]).filter(c=>c.count>=2).length;
     document.getElementById('mReturning').textContent = returning;
 
-    // tables
     const topBody = document.querySelector('#tblTopServices tbody');
     const byService = {};
     (db.bookings[currentSpaId]||[]).forEach(b=>{byService[b.service]=(byService[b.service]||{count:0, sum:0});byService[b.service].count++;byService[b.service].sum+=b.price;});
@@ -250,7 +431,6 @@
     const perfBody = document.querySelector('#tblStaffPerf tbody');
     perfBody.innerHTML = (db.staff[currentSpaId]||[]).map(s=>`<tr><td>${s.name}</td><td>${s.orders}</td><td>${s.rating.toFixed(1)}</td></tr>`).join('')||'<tr><td colspan=3 class="muted">Chưa có dữ liệu</td></tr>';
 
-    // chart
     const ctx = document.getElementById('chartRevenue');
     if(window._chart){window._chart.destroy();}
     window._chart = new Chart(ctx,{type:'bar', data:{labels:stat.months, datasets:[{label:'Doanh thu (triệu)', data:stat.rev, borderWidth:1},{label:'Lợi nhuận (triệu)', data:stat.prof, borderWidth:1}]}, options:{responsive:true, scales:{y:{beginAtZero:true}}}});
@@ -258,31 +438,88 @@
 
   function renderServices(){
     const body = document.querySelector('#tblServices tbody');
+    if(!body) return;
+    if(!currentSpaId){
+      body.innerHTML = "<tr><td colspan='4' class='muted'>Hãy thêm spa để quản lý dịch vụ.</td></tr>";
+      return;
+    }
     const arr = db.services[currentSpaId]||[];
+    if(!arr.length){
+      body.innerHTML = "<tr><td colspan='4' class='muted'>Chưa có dịch vụ nào</td></tr>";
+      return;
+    }
     body.innerHTML = arr.map(s=>`<tr><td>${s.name}</td><td>${s.duration} phút</td><td>${fmtMoney(s.price)}</td><td><button class='btn ghost' onclick='editService(${s.id})'>Sửa</button> <button class='btn' style='background:var(--danger);color:#fff' onclick='delService(${s.id})'>Xóa</button></td></tr>`).join('');
   }
   function renderStaff(){
     const body = document.querySelector('#tblStaff tbody');
+    if(!body) return;
+    if(!currentSpaId){
+      body.innerHTML = "<tr><td colspan='4' class='muted'>Thêm spa để quản lý nhân viên.</td></tr>";
+      return;
+    }
     const arr = db.staff[currentSpaId]||[];
+    if(!arr.length){
+      body.innerHTML = "<tr><td colspan='4' class='muted'>Chưa có nhân viên nào</td></tr>";
+      return;
+    }
     body.innerHTML = arr.map(s=>`<tr><td>${s.name}</td><td>${s.skills}</td><td>${s.active?'<span class="badge live">Active</span>':'<span class="badge pause">Inactive</span>'}</td><td><button class='btn ghost' onclick='editStaff(${s.id})'>Sửa</button> <button class='btn' style='background:var(--danger);color:#fff' onclick='delStaff(${s.id})'>Xóa</button></td></tr>`).join('');
   }
   function renderBookings(){
     const body = document.querySelector('#tblBookings tbody');
-    const q = document.getElementById('searchBooking').value?.toLowerCase()||'';
+    if(!body) return;
+    if(!currentSpaId){
+      body.innerHTML = "<tr><td colspan='6' class='muted'>Tạo spa để xem danh sách đặt lịch.</td></tr>";
+      return;
+    }
+    const q = searchBookingInput ? (searchBookingInput.value || '').toLowerCase() : '';
     const arr = (db.bookings[currentSpaId]||[]).filter(b=> (b.customer+b.phone).toLowerCase().includes(q));
+    if(!arr.length){
+      body.innerHTML = "<tr><td colspan='6' class='muted'>Chưa có đặt lịch nào</td></tr>";
+      return;
+    }
     body.innerHTML = arr.map(b=>`<tr><td>${b.customer} (${b.phone})</td><td>${b.service}</td><td>${b.time}</td><td>${fmtMoney(b.price)}</td><td>${b.status}</td><td><button class='btn primary' onclick='confirmBooking(${b.id})'>Xác nhận</button> <button class='btn' style='background:var(--warning);color:#fff' onclick='cancelBooking(${b.id})'>Hủy</button></td></tr>`).join('');
   }
   function renderReviews(){
     const body = document.querySelector('#tblReviews tbody');
-    body.innerHTML = (db.reviews[currentSpaId]||[]).map(r=>`<tr><td>${r.name}</td><td>★ ${r.rating}</td><td>${r.text}</td><td>${r.date}</td><td><button class='btn ghost' onclick='replyReview(${r.id})'>Trả lời</button> <button class='btn' style='background:var(--warning);color:#fff' onclick='reportReview(${r.id})'>Báo cáo</button></td></tr>`).join('');
+    if(!body) return;
+    if(!currentSpaId){
+      body.innerHTML = "<tr><td colspan='5' class='muted'>Thêm spa để theo dõi đánh giá.</td></tr>";
+      return;
+    }
+    const arr = db.reviews[currentSpaId]||[];
+    if(!arr.length){
+      body.innerHTML = "<tr><td colspan='5' class='muted'>Chưa có đánh giá nào</td></tr>";
+      return;
+    }
+    body.innerHTML = arr.map(r=>`<tr><td>${r.name}</td><td>★ ${r.rating}</td><td>${r.text}</td><td>${r.date}</td><td><button class='btn ghost' onclick='replyReview(${r.id})'>Trả lời</button> <button class='btn' style='background:var(--warning);color:#fff' onclick='reportReview(${r.id})'>Báo cáo</button></td></tr>`).join('');
   }
   function renderCustomers(){
     const body = document.querySelector('#tblCustomers tbody');
-    body.innerHTML = (db.customers[currentSpaId]||[]).map(c=>`<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.count}</td><td><span class='rank ${c.rank}'>${c.rank}</span></td></tr>`).join('');
+    if(!body) return;
+    if(!currentSpaId){
+      body.innerHTML = "<tr><td colspan='4' class='muted'>Chưa có spa để hiển thị khách hàng.</td></tr>";
+      return;
+    }
+    const arr = db.customers[currentSpaId]||[];
+    if(!arr.length){
+      body.innerHTML = "<tr><td colspan='4' class='muted'>Chưa có khách hàng nào</td></tr>";
+      return;
+    }
+    body.innerHTML = arr.map(c=>`<tr><td>${c.name}</td><td>${c.phone}</td><td>${c.count}</td><td><span class='rank ${c.rank}'>${c.rank}</span></td></tr>`).join('');
   }
   function renderCoupons(){
     const body = document.querySelector('#tblCoupons tbody');
-    body.innerHTML = (db.coupons[currentSpaId]||[]).map(c=>`<tr><td>${c.code}</td><td>${c.type}</td><td>${c.value}</td><td>${c.range}</td><td><button class='btn ghost' onclick='editCoupon("${c.code}")'>Sửa</button> <button class='btn' style='background:var(--danger);color:#fff' onclick='delCoupon("${c.code}")'>Xóa</button></td></tr>`).join('');
+    if(!body) return;
+    if(!currentSpaId){
+      body.innerHTML = "<tr><td colspan='5' class='muted'>Thêm spa để quản lý mã ưu đãi.</td></tr>";
+      return;
+    }
+    const arr = db.coupons[currentSpaId]||[];
+    if(!arr.length){
+      body.innerHTML = "<tr><td colspan='5' class='muted'>Chưa có mã ưu đãi nào</td></tr>";
+      return;
+    }
+    body.innerHTML = arr.map(c=>`<tr><td>${c.code}</td><td>${c.type}</td><td>${c.value}</td><td>${c.range}</td><td><button class='btn ghost' onclick='editCoupon("${c.code}")'>Sửa</button> <button class='btn' style='background:var(--danger);color:#fff' onclick='delCoupon("${c.code}")'>Xóa</button></td></tr>`).join('');
   }
 
   // Calendar simple render (Mon-Sun 8:00-18:00)
@@ -290,6 +527,10 @@
   function renderCalendar(){
     const cal = document.getElementById('calendar');
     cal.innerHTML = '';
+    if(!currentSpaId){
+      cal.innerHTML = "<div class='muted' style='padding:24px'>Thêm spa để theo dõi lịch đặt.</div>";
+      return;
+    }
     // header
     cal.insertAdjacentHTML('beforeend', `<div class='cal-head'><div></div>${days.map(d=>`<div>${d}</div>`).join('')}</div>`);
     for(let h=8; h<=18; h++){
@@ -313,32 +554,181 @@
   });
 
   // ======= ACTIONS =======
-  spaSelect.addEventListener('change',()=>{currentSpaId=parseInt(spaSelect.value);populateDashboard();renderServices();renderStaff();renderBookings();renderReviews();renderCustomers();renderCoupons();renderCalendar();});
-  document.getElementById('btnToggleStatus').onclick = ()=>{const spa=db.spas.find(s=>s.id==currentSpaId); spa.status = spa.status==='active'?'paused':'active'; populateDashboard();};
-  document.getElementById('searchBooking').oninput = renderBookings;
+  spaSelect.addEventListener('change',()=>{
+    const val = spaSelect.value;
+    currentSpaId = val ? parseInt(val, 10) : null;
+    ensureSpaCollections(currentSpaId);
+    refreshAll();
+  });
+
+  if(btnToggleStatus){
+    btnToggleStatus.addEventListener('click', ()=>{
+      if(!currentSpaId){ alert('Hãy thêm spa trước.'); return; }
+      const spa=db.spas.find(s=>s.id==currentSpaId);
+      if(!spa) return;
+      spa.status = spa.status==='active'?'paused':'active';
+      refreshAll();
+    });
+  }
+
+  if(searchBookingInput){
+    searchBookingInput.addEventListener('input', renderBookings);
+  }
+
+  function promptFallbackSpa(){
+    const name = prompt('Tên spa mới?');
+    if(!name) return;
+    const address = prompt('Địa chỉ spa?') || 'Đang cập nhật';
+    const phone = prompt('Số điện thoại liên hệ?') || '';
+    addSpaToDb({ name, address, phone });
+  }
+
+  if(btnAddSpa){
+    btnAddSpa.addEventListener('click', (event)=>{
+      event.preventDefault();
+      openSpaDialogUi();
+    });
+  }
+
+  const closeSpaButtons = document.querySelectorAll('[data-close-spa]');
+  Array.prototype.forEach.call(closeSpaButtons, (btn)=>{
+    btn.addEventListener('click', ()=>{
+      closeSpaDialogUi();
+    });
+  });
+
+  if(spaDialog){
+    if(spaDialogSupported){
+      spaDialog.addEventListener('close', resetSpaDialogState);
+    }else{
+      spaDialog.addEventListener('click', (event)=>{
+        if(event.target === spaDialog){
+          closeSpaDialogUi();
+        }
+      });
+      document.addEventListener('keydown', (event)=>{
+        if(event.key === 'Escape' && spaDialog.classList.contains('is-open')){
+          closeSpaDialogUi();
+        }
+      });
+    }
+  }
+
+  if(spaForm){
+    spaForm.addEventListener('submit', (event)=>{
+      event.preventDefault();
+      const nameInput = spaForm.querySelector('#newSpaName');
+      const addrInput = spaForm.querySelector('#newSpaAddr');
+      const phoneInput = spaForm.querySelector('#newSpaPhone');
+      const name = nameInput ? nameInput.value.trim() : '';
+      const address = addrInput ? addrInput.value.trim() : '';
+      const phone = phoneInput ? phoneInput.value.trim() : '';
+      if(!name || !address){
+        if(spaSuccess){
+          spaSuccess.hidden = false;
+          spaSuccess.textContent = 'Vui lòng điền đầy đủ tên và địa chỉ spa.';
+        }
+        return;
+      }
+      addSpaToDb({ name, address, phone });
+      if(spaSuccess){
+        spaSuccess.hidden = false;
+        spaSuccess.textContent = 'Đã thêm spa ' + name + '. Bạn có thể cập nhật chi tiết trong tab "Cài đặt Spa".';
+      }
+      window.setTimeout(()=>{
+        closeSpaDialogUi();
+      }, 1200);
+    });
+  }
 
   // CRUD stubs (replace with backend)
   window.editService = id=>alert('Sửa dịch vụ #'+id);
-  window.delService = id=>{db.services[currentSpaId]= (db.services[currentSpaId]||[]).filter(s=>s.id!==id);renderServices();};
-  document.getElementById('btnAddService').onclick = ()=>{const name=prompt('Tên dịch vụ?'); if(!name) return; (db.services[currentSpaId]||=[]).push({id:Math.random(),name,duration:60,price:300000}); renderServices();};
+  window.delService = id=>{
+    if(!currentSpaId) return;
+    db.services[currentSpaId]= (db.services[currentSpaId]||[]).filter(s=>s.id!==id);
+    renderServices();
+  };
+  document.getElementById('btnAddService').onclick = ()=>{
+    if(!currentSpaId){ alert('Hãy tạo spa trước.'); return; }
+    const name=prompt('Tên dịch vụ?');
+    if(!name) return;
+    ensureSpaCollections(currentSpaId);
+    db.services[currentSpaId].push({id:Math.random(),name,duration:60,price:300000});
+    renderServices();
+  };
 
   window.editStaff = id=>alert('Sửa nhân viên #'+id);
-  window.delStaff = id=>{db.staff[currentSpaId]= (db.staff[currentSpaId]||[]).filter(s=>s.id!==id);renderStaff();};
-  document.getElementById('btnAddStaff').onclick = ()=>{const name=prompt('Tên nhân viên?'); if(!name) return; (db.staff[currentSpaId]||=[]).push({id:Math.random(),name,skills:'Massage',active:true,rating:4.5,orders:0}); renderStaff();};
+  window.delStaff = id=>{
+    if(!currentSpaId) return;
+    db.staff[currentSpaId]= (db.staff[currentSpaId]||[]).filter(s=>s.id!==id);
+    renderStaff();
+  };
+  document.getElementById('btnAddStaff').onclick = ()=>{
+    if(!currentSpaId){ alert('Hãy tạo spa trước.'); return; }
+    const name=prompt('Tên nhân viên?');
+    if(!name) return;
+    ensureSpaCollections(currentSpaId);
+    db.staff[currentSpaId].push({id:Math.random(),name,skills:'Massage',active:true,rating:4.5,orders:0});
+    renderStaff();
+  };
 
-  window.confirmBooking = id=>{const b=(db.bookings[currentSpaId]||[]).find(x=>x.id===id); if(b){b.status='confirmed'; renderBookings();}};
-  window.cancelBooking = id=>{const b=(db.bookings[currentSpaId]||[]).find(x=>x.id===id); if(b){b.status='cancelled'; renderBookings();}};
+  window.confirmBooking = id=>{
+    if(!currentSpaId) return;
+    const b=(db.bookings[currentSpaId]||[]).find(x=>x.id===id);
+    if(b){b.status='confirmed'; renderBookings();}
+  };
+  window.cancelBooking = id=>{
+    if(!currentSpaId) return;
+    const b=(db.bookings[currentSpaId]||[]).find(x=>x.id===id);
+    if(b){b.status='cancelled'; renderBookings();}
+  };
 
   window.replyReview = id=>alert('Trả lời review #'+id);
   window.reportReview = id=>alert('Báo cáo review #'+id+' -> gửi Admin');
 
-  document.getElementById('btnAddCoupon').onclick = ()=>{const code=prompt('Mã?'); if(!code) return; (db.coupons[currentSpaId]||=[]).push({code,type:'percent',value:10,range:'Từ hôm nay'}); renderCoupons();};
+  document.getElementById('btnAddCoupon').onclick = ()=>{
+    if(!currentSpaId){ alert('Hãy tạo spa trước.'); return; }
+    const code=prompt('Mã?');
+    if(!code) return;
+    ensureSpaCollections(currentSpaId);
+    db.coupons[currentSpaId].push({code,type:'percent',value:10,range:'Từ hôm nay'});
+    renderCoupons();
+  };
   window.editCoupon = code=>alert('Sửa mã '+code);
-  window.delCoupon = code=>{db.coupons[currentSpaId]= (db.coupons[currentSpaId]||[]).filter(c=>c.code!==code); renderCoupons();};
+  window.delCoupon = code=>{
+    if(!currentSpaId) return;
+    db.coupons[currentSpaId]= (db.coupons[currentSpaId]||[]).filter(c=>c.code!==code);
+    renderCoupons();
+  };
 
   // Settings
-  document.getElementById('btnSaveSpa').onclick = ()=>{const s=db.spas.find(x=>x.id==currentSpaId); s.name=inpSpaName.value; s.address=inpSpaAddr.value; s.phone=inpSpaPhone.value; s.status=selSpaStatus.value==='active'?'active':'paused'; alert('Đã lưu & gửi thông báo tới Admin để duyệt (demo)'); refreshSpaOptions(); populateDashboard();};
-  document.getElementById('btnDeleteSpa').onclick = ()=>{if(!confirm('Xóa spa hiện tại?')) return; db.spas = db.spas.filter(s=>s.id!=currentSpaId); currentSpaId = db.spas[0]?.id; refreshSpaOptions(); populateDashboard(); renderServices(); renderStaff(); renderBookings(); renderReviews(); renderCustomers(); renderCoupons(); renderCalendar();};
+  document.getElementById('btnSaveSpa').onclick = ()=>{
+    if(!currentSpaId){ alert('Hãy thêm spa trước.'); return; }
+    const s=db.spas.find(x=>x.id==currentSpaId);
+    if(!s) return;
+    s.name=inpSpaName.value;
+    s.address=inpSpaAddr.value;
+    s.phone=inpSpaPhone.value;
+    s.status=selSpaStatus.value==='active'?'active':'paused';
+    alert('Đã lưu & gửi thông báo tới Admin để duyệt (demo)');
+    refreshSpaOptions();
+    refreshAll();
+  };
+  document.getElementById('btnDeleteSpa').onclick = ()=>{
+    if(!currentSpaId){ alert('Không có spa để xóa.'); return; }
+    if(!confirm('Xóa spa hiện tại?')) return;
+    db.spas = db.spas.filter(s=>s.id!=currentSpaId);
+    delete db.services[currentSpaId];
+    delete db.staff[currentSpaId];
+    delete db.bookings[currentSpaId];
+    delete db.reviews[currentSpaId];
+    delete db.customers[currentSpaId];
+    delete db.coupons[currentSpaId];
+    delete db.revenue[currentSpaId];
+    currentSpaId = db.spas.length ? db.spas[0].id : null;
+    refreshSpaOptions();
+    refreshAll();
+  };
 
   // INIT LOAD
   refreshSpaOptions();
@@ -347,19 +737,36 @@
   const inpSpaAddr=document.getElementById('inpSpaAddr');
   const inpSpaPhone=document.getElementById('inpSpaPhone');
   const selSpaStatus=document.getElementById('selSpaStatus');
-  function syncSettings(){const s=db.spas.find(x=>x.id==currentSpaId); inpSpaName.value=s.name; inpSpaAddr.value=s.address; inpSpaPhone.value=s.phone; selSpaStatus.value=s.status==='active'?'active':'paused';}
-
-  populateDashboard(); renderServices(); renderStaff(); renderBookings(); renderReviews(); renderCustomers(); renderCoupons(); renderCalendar(); syncSettings();
-  window.addEventListener('DOMContentLoaded', function() {
-  const btnLogout = document.getElementById('btnLogout');
-  if (btnLogout) {
-    btnLogout.addEventListener('click', function(e) {
-      e.preventDefault();
-      localStorage.removeItem('auth');
-      window.location.href = "index.html";
-    });
+  function syncSettings(){
+    if(!inpSpaName) return;
+    const fields = [inpSpaName, inpSpaAddr, inpSpaPhone, selSpaStatus];
+    const spa = currentSpaId ? db.spas.find(x=>x.id==currentSpaId) : null;
+    if(!spa){
+      fields.forEach(el=>{ el.value = ''; el.disabled = true; });
+      if(selSpaStatus){ selSpaStatus.value = 'active'; }
+      return;
+    }
+    fields.forEach(el=>{ el.disabled = false; });
+    inpSpaName.value=spa.name;
+    inpSpaAddr.value=spa.address;
+    inpSpaPhone.value=spa.phone;
+    selSpaStatus.value=spa.status==='active'?'active':'paused';
   }
-});
+
+  function refreshAll(){
+    populateDashboard();
+    renderServices();
+    renderStaff();
+    renderBookings();
+    renderReviews();
+    renderCustomers();
+    renderCoupons();
+    renderCalendar();
+    syncSettings();
+    updateToggleButtonLabel();
+  }
+
+  refreshAll();
   </script>
 </body>
 </html>
