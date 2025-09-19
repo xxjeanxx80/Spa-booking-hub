@@ -7,682 +7,213 @@
     <meta name="description" content="Nền tảng đặt lịch spa hàng đầu Việt Nam. Tìm kiếm và đặt lịch tại các spa uy tín với giá tốt nhất.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary-color: #6366f1;
-            --secondary-color: #ec4899;
-            --accent-color: #f97316;
-            --background: #ffffff;
-            --surface: #f8fafc;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --error: #ef4444;
-            --warning: #f59e0b;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: var(--text-primary);
-            background: var(--background);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* Header Styles */
-        .header {
-            background: white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
-
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 0;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        .logo .beauty {
-            color: var(--secondary-color);
-        }
-
-        .nav-menu {
-            display: flex;
-            list-style: none;
-            gap: 2rem;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-            color: var(--text-primary);
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-menu a:hover {
-            color: var(--primary-color);
-        }
-
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #5855eb;
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: var(--secondary-color);
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #db2777;
-            transform: translateY(-2px);
-        }
-
-        /* Main Content */
-        .main-content {
-            margin-top: 80px;
-        }
-
-        /* Hero Section */
-        .hero {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 4rem 0;
-            text-align: center;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .hero p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-
-        .search-form {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            display: flex;
-            gap: 1rem;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 1rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .search-btn {
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .search-btn:hover {
-            background: #5855eb;
-            transform: translateY(-2px);
-        }
-
-        /* Service Categories */
-        .services {
-            padding: 4rem 0;
-            background: var(--surface);
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 3rem;
-            color: var(--text-primary);
-        }
-
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 2rem;
-        }
-
-        .service-card {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .service-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-        }
-
-        .service-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            color: white;
-            font-size: 1.5rem;
-        }
-
-        .service-card h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .service-card p {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Featured Spas */
-        .featured-spas {
-            padding: 4rem 0;
-        }
-
-        .spas-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .spa-card {
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .spa-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-        }
-
-        .spa-image {
-            width: 100%;
-            height: 200px;
-            background: linear-gradient(135deg, #f3e8ff, #fce7f3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            color: var(--primary-color);
-        }
-
-        .spa-content {
-            padding: 1.5rem;
-        }
-
-        .spa-name {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .spa-location {
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .spa-rating {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .stars {
-            color: #fbbf24;
-        }
-
-        .spa-price {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--secondary-color);
-        }
-
-        /* Booking Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 900px;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 2rem;
-            position: relative;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .booking-steps {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-            margin-top: 1rem;
-        }
-
-        .step {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .step-number {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-        }
-
-        .step.active .step-number {
-            background: var(--secondary-color);
-        }
-
-        .step.completed .step-number {
-            background: var(--success);
-        }
-
-        .step-title {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .step.active .step-title {
-            opacity: 1;
-            font-weight: 600;
-        }
-
-        .modal-body {
-            padding: 2rem;
-        }
-
-        .booking-step {
-            display: none;
-        }
-
-        .booking-step.active {
-            display: block;
-        }
-
-        .service-list {
-            display: grid;
-            gap: 1rem;
-        }
-
-        .service-item {
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .service-item:hover {
-            border-color: var(--primary-color);
-        }
-
-        .service-item.selected {
-            border-color: var(--primary-color);
-            background: #f0f9ff;
-        }
-
-        .service-info h4 {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .service-duration {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        .service-price {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--secondary-color);
-        }
-
-        .calendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .calendar-header {
-            text-align: center;
-            font-weight: 600;
-            padding: 1rem 0;
-            background: var(--surface);
-            border-radius: 8px;
-        }
-
-        .calendar-day {
-            aspect-ratio: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .calendar-day:hover {
-            background: var(--surface);
-        }
-
-        .calendar-day.selected {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .time-slots {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 1rem;
-        }
-
-        .time-slot {
-            padding: 1rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .time-slot:hover {
-            border-color: var(--primary-color);
-        }
-
-        .time-slot.selected {
-            border-color: var(--primary-color);
-            background: #f0f9ff;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 1rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-        }
-
-        .booking-summary {
-            background: var(--surface);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-
-        .summary-total {
-            border-top: 2px solid var(--border);
-            padding-top: 1rem;
-            margin-top: 1rem;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .modal-footer {
-            padding: 2rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .btn-outline:hover {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        /* Location Permission */
-        .location-prompt {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-            display: none;
-        }
-
-        .location-prompt.show {
-            display: block;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-
-            .hero h1 {
-                font-size: 2rem;
-            }
-
-            .search-form {
-                flex-direction: column;
-            }
-
-            .services-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .spas-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .booking-steps {
-                flex-wrap: wrap;
-                gap: 1rem;
-            }
-
-            .step-title {
-                display: none;
-            }
-        }
-
-        /* Loading Animation */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .hidden {
-            display: none !important;
-        }
-    </style>
+    <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
     <script type="module">
         import { getAuth, logout } from './js/auth.js';
 
-        // 1) Liên kết nút đến login.html với role=customer (preselect)
-        const actions = document.querySelector('.header-actions');
-        const [btnLogin, btnSignup] = actions.querySelectorAll('.btn');
+        const SIGNUP_STORAGE_KEY = 'fbeauty-signups';
 
-        // Nút "Đăng nhập" → login.html?role=customer
-        btnLogin.setAttribute('href', 'login.html?role=customer');
+        window.addEventListener('DOMContentLoaded', function () {
+            const actions = document.querySelector('.header-actions');
+            if (!actions) {
+                return;
+            }
 
-        // Nút "Đăng ký" → tạm thời cũng đưa về login (có thể đổi sang register sau)
-        btnSignup.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.href = 'login.html?role=customer&mode=signup';
-        });
+            const signupDialog = document.getElementById('signupDialog');
+            const signupForm = document.getElementById('signupForm');
+            const signupSuccess = document.getElementById('signupSuccess');
+            const loginButton = actions.querySelector('.btn-outline');
+            const signupButton = actions.querySelector('.btn-primary');
+            const dialogSupported = !!(signupDialog && typeof signupDialog.showModal === 'function');
 
-        // 2) Nếu đã đăng nhập → hiển thị "Xin chào" + "Đăng xuất"
-        const u = getAuth();
-        if (u) {
-            actions.innerHTML = `
-            <span>Xin chào, <b>${u.name}</b></span>
-            <a href="#" class="btn btn-secondary" id="btnLogout">Đăng xuất</a>
-            <div class="language-selector">
-                <img src="https://flagcdn.com/w20/vn.png" alt="VN" width="20">
-            </div>
-            `;
-            document.getElementById('btnLogout').addEventListener('click', (e)=>{
-            e.preventDefault();
-            logout(); // xóa session và về login.html
+            if (loginButton && !loginButton.getAttribute('href')) {
+                loginButton.setAttribute('href', 'login.html?role=customer');
+            }
+
+            if (signupButton) {
+                if (!signupButton.getAttribute('href')) {
+                    signupButton.setAttribute('href', 'login.html?role=customer&mode=signup');
+                }
+                signupButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    openSignupModal();
+                });
+            }
+
+            if (signupDialog && !dialogSupported) {
+                signupDialog.setAttribute('data-no-dialog', 'true');
+            }
+
+            function resetSignupForm() {
+                if (signupForm) {
+                    signupForm.reset();
+                }
+                if (signupSuccess) {
+                    signupSuccess.hidden = true;
+                    signupSuccess.textContent = '';
+                }
+            }
+
+            function focusFirstSignupField() {
+                if (!signupForm) {
+                    return;
+                }
+                const firstInput = signupForm.querySelector('input[name="name"]');
+                if (firstInput) {
+                    window.setTimeout(function () {
+                        firstInput.focus();
+                    }, 50);
+                }
+            }
+
+            function openSignupModal() {
+                if (signupDialog) {
+                    resetSignupForm();
+                    if (dialogSupported) {
+                        signupDialog.showModal();
+                        focusFirstSignupField();
+                        return;
+                    }
+                    signupDialog.classList.add('is-open');
+                    document.body.classList.add('signup-dialog-open');
+                    focusFirstSignupField();
+                    return;
+                }
+                window.location.href = 'login.html?role=customer&mode=signup';
+            }
+
+            function closeSignupModal() {
+                if (!signupDialog) {
+                    return;
+                }
+                if (dialogSupported) {
+                    if (signupDialog.open) {
+                        signupDialog.close();
+                    }
+                } else {
+                    signupDialog.classList.remove('is-open');
+                    document.body.classList.remove('signup-dialog-open');
+                }
+                resetSignupForm();
+            }
+
+            if (signupDialog) {
+                if (dialogSupported) {
+                    signupDialog.addEventListener('close', function () {
+                        resetSignupForm();
+                    });
+                } else {
+                    signupDialog.addEventListener('click', function (event) {
+                        if (event.target === signupDialog) {
+                            closeSignupModal();
+                        }
+                    });
+                    document.addEventListener('keydown', function (event) {
+                        if (event.key === 'Escape' && signupDialog.classList.contains('is-open')) {
+                            closeSignupModal();
+                        }
+                    });
+                }
+            }
+
+            const closeSignupButtons = document.querySelectorAll('[data-close-signup]');
+            Array.prototype.forEach.call(closeSignupButtons, function (btn) {
+                btn.addEventListener('click', function () {
+                    closeSignupModal();
+                });
             });
-        }
+
+            function renderAuthenticatedActions(user) {
+                const target = user.role === 'owner'
+                    ? 'owner_dashboard.html'
+                    : user.role === 'admin'
+                        ? 'admin_dashboard.html'
+                        : '#spas';
+                const label = user.role === 'customer' ? 'Xem spa nổi bật' : 'Vào trang quản lý';
+
+                actions.innerHTML = '
+                    <span>Xin chào, <b>' + user.name + '</b></span>
+                    <a href="' + target + '" class="btn btn-primary">' + label + '</a>
+                    <a href="#" class="btn btn-secondary" id="btnLogout">Đăng xuất</a>
+                    <div class="language-selector">
+                        <img src="https://flagcdn.com/w20/vn.png" alt="VN" width="20">
+                    </div>
+                ';
+
+                const logoutBtn = document.getElementById('btnLogout');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        logout();
+                    });
+                }
+            }
+
+            function saveSignup(data) {
+                try {
+                    const existing = JSON.parse(localStorage.getItem(SIGNUP_STORAGE_KEY) || '[]');
+                    existing.push({
+                        name: data.name,
+                        email: data.email,
+                        phone: data.phone,
+                        intent: data.intent,
+                        createdAt: new Date().toISOString()
+                    });
+                    localStorage.setItem(SIGNUP_STORAGE_KEY, JSON.stringify(existing));
+                } catch (error) {
+                    console.error('Không thể lưu đăng ký', error);
+                }
+            }
+
+            if (signupForm) {
+                signupForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+
+                    const formData = new FormData(signupForm);
+                    const payload = {
+                        name: String(formData.get('name') || '').trim(),
+                        email: String(formData.get('email') || '').trim(),
+                        phone: String(formData.get('phone') || '').trim(),
+                        intent: String(formData.get('intent') || 'customer').trim() || 'customer'
+                    };
+
+                    if (!payload.name || !payload.email || !payload.phone) {
+                        if (signupSuccess) {
+                            signupSuccess.hidden = false;
+                            signupSuccess.textContent = 'Vui lòng điền đầy đủ thông tin để chúng tôi liên hệ.';
+                        }
+                        return;
+                    }
+
+                    saveSignup(payload);
+
+                    if (signupSuccess) {
+                        signupSuccess.hidden = false;
+                        signupSuccess.textContent = 'Đã ghi nhận đăng ký cho ' + payload.name + '. Chúng tôi sẽ liên hệ sớm!';
+                    }
+
+                    window.setTimeout(function () {
+                        closeSignupModal();
+                        const targetRole = payload.intent || 'customer';
+                        const baseLocation = (window.location.origin && window.location.origin !== 'null')
+                            ? window.location.origin
+                            : window.location.href;
+                        const url = new URL('login.html', baseLocation);
+                        url.searchParams.set('role', targetRole);
+                        url.searchParams.set('mode', 'signup');
+                        url.searchParams.set('email', payload.email);
+                        window.location.href = url.toString();
+                    }, 1200);
+                });
+            }
+
+            const currentUser = getAuth();
+            if (currentUser) {
+                renderAuthenticatedActions(currentUser);
+            }
+        });
     </script>
 
     <!-- Header -->
@@ -701,8 +232,8 @@
                     </ul>
                 </nav>
                 <div class="header-actions">
-                    <a href="#" class="btn btn-outline">Đăng nhập</a>
-                    <a href="#" class="btn btn-primary">Đăng ký</a>
+                    <a href="login.html?role=customer" class="btn btn-outline" data-default-login>Đăng nhập</a>
+                    <a href="login.html?role=customer&mode=signup" class="btn btn-primary" data-default-signup>Đăng ký</a>
                     <div class="language-selector">
                         <img src="https://flagcdn.com/w20/vn.png" alt="VN" width="20">
                     </div>
@@ -1431,5 +962,32 @@
             }
         });
     </script>
+
+    <dialog id="signupDialog" class="signup-dialog">
+        <form id="signupForm">
+            <h3>Đăng ký tài khoản BeautyHub</h3>
+            <p class="signup-helper">Điền thông tin bên dưới, chúng tôi sẽ liên hệ trong vòng 1 ngày làm việc.</p>
+            <label>Họ và tên
+                <input type="text" name="name" placeholder="Nguyễn Văn A" required>
+            </label>
+            <label>Email
+                <input type="email" name="email" placeholder="ban@example.com" required>
+            </label>
+            <label>Số điện thoại
+                <input type="tel" name="phone" placeholder="0123 456 789" required>
+            </label>
+            <label>Bạn quan tâm đến
+                <select name="intent">
+                    <option value="customer">Đặt lịch làm đẹp</option>
+                    <option value="owner">Đưa spa của tôi lên nền tảng</option>
+                </select>
+            </label>
+            <div class="signup-actions">
+                <button type="button" class="btn btn-outline" data-close-signup>Đóng</button>
+                <button type="submit" class="btn btn-primary">Gửi yêu cầu</button>
+            </div>
+            <p class="signup-success" id="signupSuccess" hidden></p>
+        </form>
+    </dialog>
 </body>
 </html>
